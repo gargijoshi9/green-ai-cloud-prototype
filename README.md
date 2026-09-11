@@ -130,10 +130,43 @@ This project builds on well-established foundations:
 
 ---
 
-## Datasets & Tools
+## Dataset
 
-- **Workload Data:** Public cloud traces (e.g., Google Cluster Trace / Azure Public Dataset)
-- **Carbon Intensity Data:** Real or simulated grid signals (e.g., WattTime, Electricity Maps)
+The workload dataset used in this project is provided as a ZIP file on Google Drive.
+
+**Download:** [Green AI Dataset ZIP](https://drive.google.com/file/d/1ekXGp0rh72kzT95Vs6NqHTP1eoi99nB4/view?usp=sharing&utm_source=chatgpt.com)
+
+### Setup
+
+1. Download the ZIP file from the link above.
+2. Extract the ZIP.
+3. Place the extracted files inside:
+
+```text
+dataset/raw/
+```
+
+The structure should look like:
+
+```text
+dataset/
+└── raw/
+    ├── dataset files...
+```
+
+The `dataset/raw/` folder is excluded from GitHub because the dataset may contain large files.
+
+### Usage
+
+The dataset is used to:
+
+* Analyze historical cloud workload.
+* Train the workload prediction model.
+* Generate workload forecasts.
+* Provide workload information to the carbon-aware scheduler.
+* Compare baseline and Green AI scheduling performance.
+
+After placing the dataset in `dataset/raw/`, run the preprocessing pipeline before training the prediction model.
 
 ## Expected Outcome
 
