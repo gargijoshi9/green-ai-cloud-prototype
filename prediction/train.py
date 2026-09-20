@@ -1,6 +1,17 @@
+from pathlib import Path
+import sys
 import pandas as pd
-from model import MovingAverageForecaster, LagRegressionForecaster, DifferencedRidgeForecaster
 from sklearn.metrics import mean_absolute_error
+
+# Ensure prediction directory is on sys.path so model imports work from any working directory
+CURRENT_DIR = Path(__file__).resolve().parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
+
+from model import MovingAverageForecaster, LagRegressionForecaster, DifferencedRidgeForecaster
+
+BASE_DIR = CURRENT_DIR.parent
+PROCESSED_DIR = BASE_DIR / "dataset" / "processed"
 
 
 def walk_forward_evaluate(cls, series, train_size, horizon=3, **kwargs):
@@ -19,7 +30,7 @@ def walk_forward_evaluate(cls, series, train_size, horizon=3, **kwargs):
     return preds, actuals
 
 
-df = pd.read_csv("../dataset/processed/workload_timeseries.csv")
+df = pd.read_csv(PROCESSED_DIR / "workload_timeseries.csv")
 series = df["mean_cpu_avg"]
 
 train_size = int(len(series) * 0.8)
@@ -38,11 +49,18 @@ for name, (cls, kwargs) in models_to_test.items():
     mae = mean_absolute_error(actuals, preds)
     print(f"{name:<20} {mae:>10.4f}")
 
-# Keep the SAME output format — column name and structure unchanged
-# so the scheduler/dashboard code doesn't need to change at all
+# Train the best model on the training split and generate final forecast
 best_model = DifferencedRidgeForecaster(n_lags=5, alpha=1.0)
 best_model.fit(series.iloc[:train_size].reset_index(drop=True))
 final_forecast = best_model.predict(n_steps=len(series) - train_size)
 
-pd.DataFrame({"forecast": final_forecast}).to_csv("../dataset/processed/forecast_output.csv", index=False)
-print("\nSaved updated forecast to dataset/processed/forecast_output.csv")
+# Include corresponding timestamps so downstream modules (e.g., scheduler, carbon merge) can align
+test_timestamps = df["timestamp"].iloc[train_size:].values
+forecast_df = pd.DataFrame({
+    "timestamp": test_timestamps,
+    "forecast": final_forecast
+})
+
+output_path = PROCESSED_DIR / "forecast_output.csv"
+forecast_df.to_csv(output_path, index=False)
+print(f"\nSaved updated forecast with timestamps to {output_path}")
