@@ -3,156 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green AI Cloud Dashboard</title>
-    <style>
-        :root {
-            --aws-navy: #232F3E;
-            --sustainability-green: #2ecc71;
-            --bg-color: #f4f6f8;
-            --card-bg: #ffffff;
-            --text-main: #333333;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-        }
-
-        .navbar {
-            background-color: var(--aws-navy);
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid var(--sustainability-green);
-        }
-
-        .navbar h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .container {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .dashboard-header {
-            margin-bottom: 2rem;
-        }
-
-        .dashboard-header h2 {
-            margin: 0;
-            color: var(--aws-navy);
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .metric-card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border-left: 5px solid var(--sustainability-green);
-        }
-
-        .metric-card h3 {
-            margin: 0 0 0.5rem 0;
-            color: #666;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-card .value {
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--aws-navy);
-        }
-
-        .chart-placeholder {
-            margin-top: 2rem;
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 2rem;
-            height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed #ccc;
-            color: #888;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-    </style>
+    <title>Green AI Cloud Prototype | Interactive Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-leaf logo-icon"></i>
+                <h2>Green AI Cloud</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" data-target="view-performance" class="nav-link active"><i class="fa-solid fa-chart-line"></i> Performance</a>
+                <a href="#" data-target="view-scheduler" class="nav-link"><i class="fa-solid fa-server"></i> Scheduler</a>
+                <a href="#" data-target="view-model" class="nav-link"><i class="fa-solid fa-microchip"></i> Model Opt.</a>
+                <a href="#" data-target="view-paper" class="nav-link"><i class="fa-solid fa-file-lines"></i> Research Paper</a>
+            </nav>
+        </aside>
 
-    <nav class="navbar">
-        <h1>☁️ Green AI Cloud Prototype</h1>
-        <span>AWS SBG PICT Pune</span>
-    </nav>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Global Header -->
+            <header class="top-header">
+                <div class="headline-container">
+                    <h1>System Impact Report</h1>
+                    <div class="big-headline">
+                        <span id="headline-number" class="highlight-green">--%</span>
+                        <span class="headline-text">Reduction in Carbon Emissions</span>
+                    </div>
+                </div>
+                <div class="status-indicator">
+                    <span class="dot pulse"></span> Live System Active
+                </div>
+            </header>
 
-    <div class="container">
-        <div class="dashboard-header">
-            <h2>Sustainability Metrics Overview</h2>
-            <p>Monitoring prototype for backend data integration.</p>
-        </div>
-        
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <h3>Active Instances</h3>
-                <p class="value" id="val-instances">--</p>
-            </div>
-            <div class="metric-card" style="border-left-color: #3498db;">
-                <h3>Energy Consumed (kWh)</h3>
-                <p class="value" id="val-energy">--</p>
-            </div>
-            <div class="metric-card" style="border-left-color: #e74c3c;">
-                <h3>Carbon Emission (gCO2e)</h3>
-                <p class="value" id="val-carbon">--</p>
-            </div>
-            <div class="metric-card" style="border-left-color: #f1c40f;">
-                <h3>Efficiency Score</h3>
-                <p class="value" id="val-efficiency">--</p>
-            </div>
-        </div>
+            <!-- TAB 1: PERFORMANCE (Active by default) -->
+            <div id="view-performance" class="tab-pane active">
+                <section class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="kpi-info">
+                            <h3>Total Energy (Optimized)</h3>
+                            <p id="kpi-energy-opt">-- kWh</p>
+                            <small>vs <span id="kpi-energy-base">--</span> kWh baseline</small>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-cloud"></i></div>
+                        <div class="kpi-info">
+                            <h3>Carbon Emitted</h3>
+                            <p id="kpi-carbon-opt">-- kg CO₂</p>
+                            <small>vs <span id="kpi-carbon-base">--</span> kg baseline</small>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                        <div class="kpi-info">
+                            <h3>Overall Energy Savings</h3>
+                            <p id="kpi-energy-savings">--%</p>
+                            <small>Compared to doing nothing</small>
+                        </div>
+                    </div>
+                </section>
 
-        <div class="chart-placeholder">
-            <h3>[ Dynamic Chart / Visualization Skeleton ]</h3>
-        </div>
+                <section class="charts-section">
+                    <div class="chart-container">
+                        <h3>Energy Consumption Over Time</h3>
+                        <p class="chart-desc">Baseline vs. Predictive Scheduled System</p>
+                        <div style="height: 300px;">
+                            <canvas id="energyChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB 2: SCHEDULER -->
+            <div id="view-scheduler" class="tab-pane">
+                <div class="detail-card full-width">
+                    <h3><i class="fa-solid fa-earth-americas"></i> Smart Scheduling Logic</h3>
+                    <p class="text-muted">The scheduler shifts flexible workloads to periods of high renewable energy availability (low carbon intensity). Urgent jobs are executed immediately.</p>
+                    
+                    <div class="scheduler-stats-grid">
+                        <div class="stat-box">
+                            <h4>Total Jobs Processed</h4>
+                            <span id="sch-total" class="stat-value">--</span>
+                        </div>
+                        <div class="stat-box warning">
+                            <h4>Jobs Delayed for Clean Energy</h4>
+                            <span id="sch-delayed" class="stat-value">--</span>
+                        </div>
+                        <div class="stat-box success">
+                            <h4>Average Wait Time</h4>
+                            <span id="sch-wait" class="stat-value">-- mins</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-container mt-4">
+                        <div class="progress-label">
+                            <span>Flexible Jobs Shifted</span>
+                            <span id="shift-percentage">--%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="shift-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <p class="summary-text mt-2" id="shift-summary">Waiting for data...</p>
+                </div>
+            </div>
+
+            <!-- TAB 3: MODEL OPTIMIZATION -->
+            <div id="view-model" class="tab-pane">
+                <div class="detail-card full-width">
+                    <h3><i class="fa-solid fa-compress"></i> Inference Optimization (Quantization)</h3>
+                    <p class="text-muted">By quantizing the AI model weights, we drastically reduce the memory footprint and execution time, lowering the energy consumed per inference request.</p>
+                    
+                    <div class="comparison-row mt-4">
+                        <div class="comp-col">
+                            <h4>Original AI Model (Baseline)</h4>
+                            <div class="stat">Memory Footprint: <span id="inf-size-orig">-- MB</span></div>
+                            <div class="stat">Execution Latency: <span id="inf-lat-orig">-- ms</span></div>
+                        </div>
+                        <div class="comp-divider"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="comp-col highlight">
+                            <h4>Quantized Model (Optimized)</h4>
+                            <div class="stat">Memory Footprint: <span id="inf-size-opt">-- MB</span></div>
+                            <div class="stat">Execution Latency: <span id="inf-lat-opt">-- ms</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: RESEARCH PAPER -->
+            <div id="view-paper" class="tab-pane">
+                <div class="paper-container">
+                    <div class="paper-header">
+                        <h2>Green AI: Predictive Workload Scheduling and Quantization for Carbon-Aware Cloud Computing</h2>
+                        <p class="authors">Research Internship Output</p>
+                    </div>
+                    <div class="paper-abstract">
+                        <h3>Abstract</h3>
+                        <p>This study demonstrates how cloud computing infrastructure can significantly reduce its carbon footprint and electricity consumption through a tripartite approach. First, a predictive model forecasts workload surges to enable proactive resource allocation. Second, a carbon-aware scheduler delays non-urgent, flexible compute tasks until the energy grid's carbon intensity is low. Finally, inference optimization via model quantization reduces the per-execution energy cost of AI workloads without substantial loss of accuracy. Our results, visualized in this dashboard, prove that combining these techniques yields a measurable reduction in both total energy used and estimated CO₂ emissions compared to a standard, reactive baseline.</p>
+                    </div>
+                    <div class="paper-actions">
+                        <!-- Placeholder for the final technical writing document (e.g., LaTeX/PDF output) -->
+                        <button class="btn-primary"><i class="fa-solid fa-download"></i> Download Full Paper (PDF)</button>
+                        <a href="https://github.com/gargijoshi9/green-ai-cloud-prototype" target="_blank" class="btn-secondary"><i class="fa-brands fa-github"></i> View Repository</a>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
-
-    <script>
-        // Prototype JS Skeleton
-        // In the future, replace this fetch logic to call your actual backend API
-        document.addEventListener("DOMContentLoaded", () => {
-            
-            // Simulating a backend API call delay
-            setTimeout(() => {
-                // Mock data representing what the backend will send
-                const mockBackendData = {
-                    instances: 4,
-                    energy: 12.4,
-                    carbon: 345.2,
-                    efficiency: 88
-                };
-
-                // Injecting the data into the HTML structure
-                document.getElementById('val-instances').innerText = mockBackendData.instances;
-                document.getElementById('val-energy').innerText = mockBackendData.energy;
-                document.getElementById('val-carbon').innerText = mockBackendData.carbon;
-                document.getElementById('val-efficiency').innerText = mockBackendData.efficiency + '/100';
-            }, 800); 
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
