@@ -3,6 +3,7 @@ import torch
 
 from baseline_model import create_baseline_model
 from quantized_model import create_quantized_model
+from data_utils import get_sample_input, get_full_dataset
 
 
 def benchmark_model(model, sample_input, iterations=1000):
@@ -44,11 +45,25 @@ def get_model_size(model):
     return size / 1024
 
 
+def evaluate_accuracy(model, X, y):
+    """Mean absolute error of the model's predictions against real workload targets."""
+    model.eval()
+    with torch.no_grad():
+        predictions = model(X)
+        mae = torch.mean(torch.abs(predictions - y)).item()
+    return mae
+
+
 if __name__ == "__main__":
 
     input_size = 5
 
-    sample_input = torch.randn(1, input_size)
+    # ---- Real workload data instead of torch.randn(1, input_size) ----
+    sample_input = get_sample_input()          # most recent 5 readings -> shape (1, 5)
+    X_all, y_all = get_full_dataset()          # full sliding-window dataset for accuracy eval
+
+    print(f"Loaded real workload data: {X_all.shape[0]} windows")
+    print(f"Sample input (last {input_size} readings): {sample_input.tolist()}")
 
     # -----------------------------
     # Baseline Model
@@ -62,6 +77,7 @@ if __name__ == "__main__":
     )
 
     baseline_size = get_model_size(baseline_model)
+    baseline_mae = evaluate_accuracy(baseline_model, X_all, y_all)
 
     # -----------------------------
     # Quantized Model
@@ -75,6 +91,7 @@ if __name__ == "__main__":
     )
 
     quantized_size = get_model_size(quantized_model)
+    quantized_mae = evaluate_accuracy(quantized_model, X_all, y_all)
 
     # -----------------------------
     # Calculate improvements
@@ -103,12 +120,14 @@ if __name__ == "__main__":
     print(f"Model Size     : {baseline_size:.2f} KB")
     print(f"Total Time     : {baseline_time:.4f} sec")
     print(f"Avg Latency    : {baseline_latency:.4f} ms")
+    print(f"MAE (real data): {baseline_mae:.4f}")
 
     print("\nQuantized INT8 Model")
     print("--------------------")
     print(f"Model Size     : {quantized_size:.2f} KB")
     print(f"Total Time     : {quantized_time:.4f} sec")
     print(f"Avg Latency    : {quantized_latency:.4f} ms")
+    print(f"MAE (real data): {quantized_mae:.4f}")
 
     print("\nImprovement")
     print("--------------------")

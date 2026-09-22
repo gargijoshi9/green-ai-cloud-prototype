@@ -22,9 +22,11 @@ def create_quantized_model(input_size=5):
 
 if __name__ == "__main__":
 
+    from data_utils import get_sample_input
+
     model = create_quantized_model()
 
-    sample_input = torch.randn(1, 5)
+    sample_input = get_sample_input()  # real last-5 workload readings
 
     with torch.no_grad():
         output = model(sample_input)
