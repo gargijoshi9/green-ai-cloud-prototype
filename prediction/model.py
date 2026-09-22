@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 
 
 class MovingAverageForecaster:
@@ -53,4 +53,46 @@ class LagRegressionForecaster:
             next_val = self.model.predict(X_input)[0]
             preds.append(next_val)
             history.append(next_val)
+        return preds
+
+
+class DifferencedRidgeForecaster:
+    """
+    Predicts time series differences using Ridge regression with L2 regularization
+    on lag features, making the series stationary and preventing long-range drift.
+    """
+
+    def __init__(self, n_lags=5, alpha=1.0):
+        self.n_lags = n_lags
+        self.alpha = alpha
+        self.model = Ridge(alpha=alpha)
+
+    def _make_lag_features(self, diff_series):
+        df = pd.DataFrame({"dy": diff_series.values})
+        for lag in range(1, self.n_lags + 1):
+            df[f"lag_{lag}"] = df["dy"].shift(lag)
+        df = df.dropna().reset_index(drop=True)
+        X = df[[f"lag_{lag}" for lag in range(1, self.n_lags + 1)]]
+        y = df["dy"]
+        return X, y
+
+    def fit(self, series):
+        self.history = series.copy()
+        diff_series = series.diff().dropna().reset_index(drop=True)
+        X, y = self._make_lag_features(diff_series)
+        self.model.fit(X, y)
+
+    def predict(self, n_steps=3):
+        preds = []
+        raw_vals = list(self.history.values)
+        diff_vals = list(self.history.diff().dropna().values[-self.n_lags:])
+        last_level = raw_vals[-1]
+        for _ in range(n_steps):
+            X_input = pd.DataFrame([diff_vals[-self.n_lags:][::-1]],
+                                    columns=[f"lag_{lag}" for lag in range(1, self.n_lags + 1)])
+            next_diff = self.model.predict(X_input)[0]
+            next_val = last_level + next_diff
+            preds.append(next_val)
+            diff_vals.append(next_diff)
+            last_level = next_val
         return preds
