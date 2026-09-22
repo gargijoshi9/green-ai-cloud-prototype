@@ -4,9 +4,13 @@ import torch.nn as nn
 
 class WorkloadModel(nn.Module):
     """
-    Simple neural network for workload prediction.
-    Input: recent workload values
-    Output: predicted workload
+    Neural network for workload prediction.
+
+    Input:
+        5 consecutive real workload values
+
+    Output:
+        next workload value
     """
 
     def __init__(self, input_size=5):
@@ -15,8 +19,10 @@ class WorkloadModel(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_size, 32),
             nn.ReLU(),
+
             nn.Linear(32, 16),
             nn.ReLU(),
+
             nn.Linear(16, 1)
         )
 
@@ -25,22 +31,26 @@ class WorkloadModel(nn.Module):
 
 
 def create_baseline_model(input_size=5):
+
     model = WorkloadModel(input_size)
+
     model.eval()
+
     return model
 
 
 if __name__ == "__main__":
 
-    from data_utils import get_sample_input
+    from inference.data_utils import get_sample_input
 
     model = create_baseline_model()
 
-    sample_input = get_sample_input()  # real last-5 workload readings
+    sample_input = get_sample_input()
 
     with torch.no_grad():
         output = model(sample_input)
 
     print("Baseline FP32 Model")
+    print("-------------------")
     print("Input:", sample_input)
     print("Prediction:", output)
