@@ -75,16 +75,8 @@ async function loadDashboardData() {
 
     try {
 
-        // Existing dashboard data
-        dashboardData = await fetchMockData();
-
-
-        // ====================================================
-        // GET REAL INFERENCE RESULTS FROM FLASK
-        // ====================================================
-
         const response = await fetch(
-            "http://localhost:5000/api/inference-metrics"
+            "/api/dashboard"
         );
 
         if (!response.ok) {
@@ -97,22 +89,11 @@ async function loadDashboardData() {
 
         const result = await response.json();
 
-        if (!result.success) {
-
-            throw new Error(
-                result.error ||
-                "Inference benchmark failed"
-            );
-
+        if (result.success === false) {
+            throw new Error(result.error || "Dashboard API failed");
         }
 
-
-        // IMPORTANT:
-        // Replace fake inference values with
-        // actual Python benchmark results.
-
-        dashboardData.inference =
-            result.data;
+        dashboardData = result;
 
 
         console.log(
@@ -729,118 +710,3 @@ function renderChart(timeseriesData) {
 }
 
 
-// ============================================================
-// EXISTING DASHBOARD DATA
-// ============================================================
-
-function fetchMockData() {
-
-    return new Promise(resolve => {
-
-        setTimeout(() => {
-
-            resolve({
-
-                headline: {
-
-                    carbonReductionPercent:
-                        34.5,
-
-                    energyReductionPercent:
-                        28.2
-
-                },
-
-                comparison: {
-
-                    baseline: {
-
-                        energy_kwh:
-                            1450,
-
-                        carbon_kg:
-                            680
-
-                    },
-
-                    optimized: {
-
-                        energy_kwh:
-                            1041,
-
-                        carbon_kg:
-                            445
-
-                    }
-
-                },
-
-                scheduler: {
-
-                    totalJobs:
-                        1200,
-
-                    delayedJobs:
-                        420,
-
-                    avgWaitTimeMins:
-                        14.5
-
-                },
-
-
-                // IMPORTANT:
-                // Inference is NOT hardcoded here.
-                // It comes from Flask API.
-
-                inference:
-                    null,
-
-
-                timeseries: {
-
-                    labels: [
-
-                        "00:00",
-                        "04:00",
-                        "08:00",
-                        "12:00",
-                        "16:00",
-                        "20:00",
-                        "24:00"
-
-                    ],
-
-                    baselineEnergy: [
-
-                        120,
-                        90,
-                        180,
-                        250,
-                        220,
-                        190,
-                        140
-
-                    ],
-
-                    optimizedEnergy: [
-
-                        135,
-                        110,
-                        150,
-                        180,
-                        170,
-                        155,
-                        141
-
-                    ]
-
-                }
-
-            });
-
-        }, 300);
-
-    });
-
-}

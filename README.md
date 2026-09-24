@@ -168,6 +168,32 @@ The dataset is used to:
 
 After placing the dataset in `dataset/raw/`, run the preprocessing pipeline before training the prediction model.
 
+## Start the Dashboard
+
+From the project root, install the Python dependencies and start the Flask backend:
+
+```powershell
+python -m pip install -r requirements.txt
+python dashboard/app.py
+```
+
+Open the dashboard in a browser at:
+
+```text
+http://localhost:5000
+```
+
+The dashboard loads the real workload data, carbon-intensity data, carbon-aware scheduler results, and FP32 versus INT8 inference benchmark through the Flask API. The first request can take a few seconds while the models are benchmarked; the result is cached for the running process.
+
+Available API endpoints:
+
+```text
+GET /api/health
+GET /api/dashboard
+GET /api/inference-metrics
+GET /api/sustainability-metrics
+```
+
 ## Expected Outcome
 
 A working end-to-end prototype running simulated workloads twice — first as an unoptimized baseline, and second through the Green AI pipeline — demonstrating measurable reductions in energy usage and carbon emissions.
