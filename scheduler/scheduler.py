@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .rules import is_flexible
+try:
+    from .rules import is_flexible
+except ImportError:
+    from rules import is_flexible
 
 
 def carbon_score(workload: float, carbon_intensity: float) -> float:
@@ -171,3 +174,98 @@ def carbon_aware_schedule(
         )
 
     return pd.DataFrame(results)
+
+
+def load_workload_with_forecast(data_dir=None) -> pd.DataFrame:
+    """
+    Loads historical workload alongside the model's forecast output
+    so the scheduler acts on upcoming forecasted demand in addition to historical data.
+    """
+    from pathlib import Path
+
+    if data_dir is None:
+        data_dir = Path(__file__).resolve().parent.parent / "dataset" / "processed"
+    else:
+        data_dir = Path(data_dir)
+
+    workload_df = pd.read_csv(data_dir / "workload_by_category.csv")
+    forecast_path = data_dir / "forecast_output.csv"
+
+    if forecast_path.exists():
+        forecast_df = pd.read_csv(forecast_path)
+        ts_path = data_dir / "workload_timeseries.csv"
+        avg_vm_count = (
+            pd.read_csv(ts_path)["vm_count"].mean()
+            if ts_path.exists()
+            else 1.0
+        )
+        if forecast_df["forecast"].mean() < 1000:
+            scaled_forecast = forecast_df["forecast"] * avg_vm_count
+        else:
+            scaled_forecast = forecast_df["forecast"]
+
+        max_hist_time = workload_df["timestamp"].max()
+        future_timestamps = max_hist_time + 300 + (forecast_df.index * 300)
+
+        # Allocate future forecast across flexible (Delay-insensitive: ~53%) and interactive (~47%)
+        forecast_flexible = pd.DataFrame({
+            "timestamp": future_timestamps,
+            "cpu_avg": scaled_forecast * 0.53,
+            "vm_category": "Delay-insensitive",
+        })
+        forecast_interactive = pd.DataFrame({
+            "timestamp": future_timestamps,
+            "cpu_avg": scaled_forecast * 0.47,
+            "vm_category": "Interactive",
+        })
+        workload_df = pd.concat(
+            [workload_df, forecast_flexible, forecast_interactive],
+            ignore_index=True,
+        )
+
+    return workload_df
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    data_dir = root / "dataset" / "processed"
+    carbon_path = root / "carbon_data" / "india_carbon_intensity_all_states.csv"
+
+    print("Loading historical workload combined with prediction forecast...")
+    workload_df = load_workload_with_forecast(data_dir)
+
+    carbon_df = pd.read_csv(carbon_path)
+    carbon_df["timestamp"] = pd.to_datetime(carbon_df["timestamp"], utc=True)
+    carbon_df = carbon_df.groupby(
+        "timestamp", as_index=False
+    )["carbon_intensity_gco2_kwh"].mean()
+
+    carbon_start = carbon_df["timestamp"].min()
+    workload_df["timestamp"] = carbon_start + pd.to_timedelta(
+        workload_df["timestamp"], unit="s"
+    )
+    workload_df = workload_df.rename(
+        columns={"cpu_avg": "workload", "vm_category": "workload_type"}
+    )
+
+    print("Running carbon-aware scheduling...")
+    results = carbon_aware_schedule(
+        workload_df[["timestamp", "workload", "workload_type"]],
+        carbon_df,
+    )
+
+    base = results["carbon_score_now"].sum()
+    opt = results["carbon_score_scheduled"].sum()
+    reduction = ((base - opt) / base * 100) if base else 0.0
+    delayed = results[results["decision"] == "SHIFTED"]
+
+    print("\n==========================================")
+    print(" CARBON-AWARE SCHEDULER RESULTS")
+    print("==========================================")
+    print(f"Total jobs scheduled  : {len(results)}")
+    print(f"Jobs shifted to green : {len(delayed)}")
+    print(f"Average wait time     : {delayed['delay_minutes'].mean():.2f} mins" if not delayed.empty else "Average wait time     : 0 mins")
+    print(f"Carbon reduction      : {reduction:.2f}%")
+    print("==========================================")

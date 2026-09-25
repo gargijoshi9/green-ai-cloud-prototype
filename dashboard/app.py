@@ -63,6 +63,42 @@ ENERGY_PER_WORKLOAD_UNIT = 1e-6
 
 def _load_scheduler_results():
     category_df = pd.read_csv(DATA_DIR / "workload_by_category.csv")
+    forecast_path = DATA_DIR / "forecast_output.csv"
+
+    # Merge/append forecasted future demand from the prediction model
+    if forecast_path.exists():
+        forecast_df = pd.read_csv(forecast_path)
+        ts_path = DATA_DIR / "workload_timeseries.csv"
+        avg_vm_count = (
+            pd.read_csv(ts_path)["vm_count"].mean()
+            if ts_path.exists()
+            else 1.0
+        )
+        # Scale if forecast is mean CPU per VM (~7-10) to match total category cpu_avg (~500k)
+        if forecast_df["forecast"].mean() < 1000:
+            scaled_forecast = forecast_df["forecast"] * avg_vm_count
+        else:
+            scaled_forecast = forecast_df["forecast"]
+
+        max_hist_time = category_df["timestamp"].max()
+        future_timestamps = max_hist_time + 300 + (forecast_df.index * 300)
+
+        # Allocate future forecast across flexible (Delay-insensitive: ~53%) and interactive (~47%)
+        forecast_flexible = pd.DataFrame({
+            "timestamp": future_timestamps,
+            "cpu_avg": scaled_forecast * 0.53,
+            "vm_category": "Delay-insensitive",
+        })
+        forecast_interactive = pd.DataFrame({
+            "timestamp": future_timestamps,
+            "cpu_avg": scaled_forecast * 0.47,
+            "vm_category": "Interactive",
+        })
+        category_df = pd.concat(
+            [category_df, forecast_flexible, forecast_interactive],
+            ignore_index=True,
+        )
+
     carbon_df = pd.read_csv(CARBON_DATA_PATH)
     carbon_df["timestamp"] = pd.to_datetime(carbon_df["timestamp"], utc=True)
     carbon_df = carbon_df.groupby(
