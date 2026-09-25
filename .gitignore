@@ -22,3 +22,5 @@ ENV/
 ehthumbs.db
 Thumbs.db
 .env
+ponytail.md
+.agents/rules
