@@ -7,6 +7,15 @@ import torch.nn as nn
 from inference.baseline_model import WorkloadModel
 
 
+def _ensure_quantized_engine():
+    """Ensure a supported quantized engine is active (e.g. qnnpack on ARM/macOS, fbgemm on x86)."""
+    supported = torch.backends.quantized.supported_engines
+    if "qnnpack" in supported:
+        torch.backends.quantized.engine = "qnnpack"
+    elif "fbgemm" in supported:
+        torch.backends.quantized.engine = "fbgemm"
+
+
 def create_quantized_model(
     input_size=5,
     trained_model=None
@@ -20,6 +29,8 @@ def create_quantized_model(
             "A trained FP32 model must be provided "
             "for INT8 quantization."
         )
+
+    _ensure_quantized_engine()
 
     # Copy trained FP32 model
     model = copy.deepcopy(trained_model)

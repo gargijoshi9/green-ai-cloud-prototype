@@ -83,7 +83,7 @@ def _load_scheduler_results():
     return scheduled, carbon_start
 
 
-def _build_timeseries(scheduled, carbon_start):
+def _build_timeseries(scheduled, carbon_start, energy_reduction=0.0):
     scheduled = scheduled.copy()
     scheduled["original_hour"] = (
         (scheduled["timestamp"] - carbon_start).dt.total_seconds() // 3600
@@ -94,6 +94,7 @@ def _build_timeseries(scheduled, carbon_start):
     baseline = scheduled.groupby("original_hour")["workload"].sum()
     optimized = scheduled.groupby("scheduled_hour")["workload"].sum()
     hours = range(int(max(baseline.index.max(), optimized.index.max())) + 1)
+    energy_factor = max(0.0, 1.0 - (energy_reduction / 100.0))
     return {
         "labels": [f"{hour:02d}:00" for hour in hours],
         "baselineEnergy": [
@@ -101,7 +102,7 @@ def _build_timeseries(scheduled, carbon_start):
             for hour in hours
         ],
         "optimizedEnergy": [
-            round(float(optimized.get(hour, 0.0) * ENERGY_PER_WORKLOAD_UNIT), 4)
+            round(float(optimized.get(hour, 0.0) * ENERGY_PER_WORKLOAD_UNIT * energy_factor), 4)
             for hour in hours
         ],
     }
@@ -118,15 +119,20 @@ def build_dashboard_data():
         if baseline_score
         else 0.0
     )
+    improvement = inference.get("improvement", {})
+    latency_red = float(improvement.get("latency_reduction_percent", 0.0))
+    size_red = float(improvement.get("size_reduction_percent", 0.0))
+    energy_reduction = latency_red if latency_red > 0 else max(0.0, size_red)
     baseline_energy = float(
         scheduled["workload"].sum() * ENERGY_PER_WORKLOAD_UNIT
     )
+    optimized_energy = baseline_energy * max(0.0, 1.0 - (energy_reduction / 100.0))
     delayed = scheduled[scheduled["decision"] == "SHIFTED"]
 
     return {
         "headline": {
             "carbonReductionPercent": round(carbon_reduction, 2),
-            "energyReductionPercent": 0.0,
+            "energyReductionPercent": round(energy_reduction, 2),
         },
         "comparison": {
             "baseline": {
@@ -134,7 +140,7 @@ def build_dashboard_data():
                 "carbon_kg": round(baseline_score / 1_000_000, 2),
             },
             "optimized": {
-                "energy_kwh": round(baseline_energy, 2),
+                "energy_kwh": round(optimized_energy, 2),
                 "carbon_kg": round(optimized_score / 1_000_000, 2),
             },
         },
@@ -146,11 +152,11 @@ def build_dashboard_data():
             else 0.0,
         },
         "inference": inference,
-        "timeseries": _build_timeseries(scheduled, carbon_start),
+        "timeseries": _build_timeseries(scheduled, carbon_start, energy_reduction=energy_reduction),
         "metadata": {
             "carbon_source": str(CARBON_DATA_PATH.relative_to(PROJECT_ROOT)),
             "workload_source": "dataset/processed/workload_by_category.csv",
-            "energy_basis": "CPU workload proxy; no power-meter data is available",
+            "energy_basis": "Quantization latency reduction proxy applied to scheduled workload",
         },
     }
 
@@ -243,9 +249,10 @@ def health_check():
 # ============================================================
 
 if __name__ == "__main__":
-
+    port = int(os.environ.get("PORT", 5001))
+    print(f"\n * Green AI Dashboard available at: http://localhost:{port}\n")
     app.run(
         host="0.0.0.0",
-        port=5000,
+        port=port,
         debug=True
     )

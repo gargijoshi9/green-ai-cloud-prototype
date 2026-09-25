@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import pandas as pd
 
@@ -40,8 +41,8 @@ def build_windows(series: pd.Series, window_size: int = WINDOW_SIZE):
         X.append(values[i : i + window_size])
         y.append(values[i + window_size])
 
-    X = torch.tensor(X, dtype=torch.float32)
-    y = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
+    X = torch.tensor(np.array(X), dtype=torch.float32)
+    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(1)
     return X, y
 
 
