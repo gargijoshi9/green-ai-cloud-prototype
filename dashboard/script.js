@@ -1,712 +1,515 @@
 // ============================================================
-// GREEN AI DASHBOARD - SCRIPT
+// GREEN AI DASHBOARD - SCRIPT & INTERACTIVE SIMULATION ENGINE
 // ============================================================
 
 let energyChartInstance = null;
 let dashboardData = null;
+let toastTimeout = null;
 
 
 // ============================================================
-// PAGE LOAD
+// PAGE INITIALIZATION
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
     setupTabs();
+    setupSimulationControls();
     loadDashboardData();
 });
 
 
 // ============================================================
-// TAB SETUP
+// TAB NAVIGATION SETUP
 // ============================================================
 
 function setupTabs() {
-
-    const navLinks =
-        document.querySelectorAll(".nav-link");
-
-    const tabPanes =
-        document.querySelectorAll(".tab-pane");
+    const navLinks = document.querySelectorAll(".nav-link");
+    const tabPanes = document.querySelectorAll(".tab-pane");
 
     navLinks.forEach(link => {
-
         link.addEventListener("click", (event) => {
-
             event.preventDefault();
 
-            navLinks.forEach(item => {
-                item.classList.remove("active");
-            });
-
-            tabPanes.forEach(item => {
-                item.classList.remove("active");
-            });
+            navLinks.forEach(item => item.classList.remove("active"));
+            tabPanes.forEach(item => item.classList.remove("active"));
 
             link.classList.add("active");
 
-            const targetId =
-                link.getAttribute("data-target");
-
-            const target =
-                document.getElementById(targetId);
+            const targetId = link.getAttribute("data-target");
+            const target = document.getElementById(targetId);
 
             if (target) {
                 target.classList.add("active");
             }
 
-            if (
-                targetId === "view-performance" &&
-                energyChartInstance
-            ) {
+            if (targetId === "view-performance" && energyChartInstance) {
                 energyChartInstance.resize();
             }
-
         });
-
     });
 }
 
 
 // ============================================================
-// LOAD DASHBOARD DATA
+// SIMULATION CONTROLS & EVENT LISTENERS
+// ============================================================
+
+function setupSimulationControls() {
+    const runBtn = document.getElementById("run-sim-btn");
+    const delaySelect = document.getElementById("param-delay");
+    const capacitySelect = document.getElementById("param-capacity");
+
+    if (runBtn) {
+        runBtn.addEventListener("click", () => {
+            triggerSimulation(true);
+        });
+    }
+
+    if (delaySelect) {
+        delaySelect.addEventListener("change", () => {
+            triggerSimulation(false);
+        });
+    }
+
+    if (capacitySelect) {
+        capacitySelect.addEventListener("change", () => {
+            triggerSimulation(false);
+        });
+    }
+}
+
+
+// ============================================================
+// INITIAL DATA LOAD
 // ============================================================
 
 async function loadDashboardData() {
-
     try {
+        const delay = document.getElementById("param-delay")?.value || 360;
+        const capacity = document.getElementById("param-capacity")?.value || 1.25;
 
-        const response = await fetch(
-            "/api/dashboard"
-        );
+        const response = await fetch(`/api/dashboard?delay=${delay}&capacity=${capacity}`);
 
         if (!response.ok) {
-
-            throw new Error(
-                `Inference API error: ${response.status}`
-            );
-
+            throw new Error(`Dashboard API error: ${response.status}`);
         }
 
         const result = await response.json();
 
         if (result.success === false) {
-            throw new Error(result.error || "Dashboard API failed");
+            throw new Error(result.error || "Dashboard data generation failed");
         }
 
         dashboardData = result;
 
-
-        console.log(
-            "================================"
-        );
-
-        console.log(
-            "REAL INFERENCE RESULTS"
-        );
-
-        console.log(
-            "================================"
-        );
-
-        console.log(
-            "Data source:",
-            dashboardData.inference.data.source
-        );
-
-        console.log(
-            "Workload column:",
-            dashboardData.inference.data.column
-        );
-
-        console.log(
-            "Training samples:",
-            dashboardData.inference.data.train_samples
-        );
-
-        console.log(
-            "Test samples:",
-            dashboardData.inference.data.test_samples
-        );
-
-        console.log(
-            "FP32:",
-            dashboardData.inference.baseline
-        );
-
-        console.log(
-            "INT8:",
-            dashboardData.inference.quantized
-        );
-
-        console.log(
-            "Comparison:",
-            dashboardData.inference.improvement
-        );
-
-
-        // Populate dashboard
-
-        populateUI(dashboardData);
-
-        renderChart(
-            dashboardData.timeseries
-        );
-
+        populateUI(dashboardData, true);
+        renderChart(dashboardData.timeseries, true);
+        updateLastEvaluatedTime();
 
     } catch (error) {
-
-        console.error(
-            "Dashboard loading error:",
-            error
-        );
-
+        console.error("Dashboard initialization error:", error);
+        showToast("Error loading dashboard data: " + error.message, true);
     }
 }
 
 
 // ============================================================
-// POPULATE DASHBOARD
+// TRIGGER LIVE SIMULATION
 // ============================================================
 
-function populateUI(data) {
+async function triggerSimulation(forceRefresh = false) {
+    const runBtn = document.getElementById("run-sim-btn");
+    const btnIcon = document.getElementById("sim-btn-icon");
+    const btnText = document.getElementById("sim-btn-text");
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
 
+    const delay = document.getElementById("param-delay")?.value || 360;
+    const capacity = document.getElementById("param-capacity")?.value || 1.25;
 
-    // ========================================================
-    // HEADLINE
-    // ========================================================
-
-    const headlineNumber =
-        document.getElementById(
-            "headline-number"
-        );
-
-    if (headlineNumber) {
-
-        headlineNumber.innerText =
-            `${data.headline.carbonReductionPercent}%`;
-
+    // Enter Loading State
+    if (runBtn) {
+        runBtn.disabled = true;
+        if (btnIcon) btnIcon.className = "fa-solid fa-spinner fa-spin";
+        if (btnText) btnText.innerText = "Simulating Pipeline...";
+    }
+    if (statusDot) {
+        statusDot.style.backgroundColor = "#f59e0b"; // Warning amber
+    }
+    if (statusText) {
+        statusText.innerText = "Recalculating Carbon Schedule...";
     }
 
-
-    // ========================================================
-    // ENERGY KPI
-    // ========================================================
-
-    const energyOpt =
-        document.getElementById(
-            "kpi-energy-opt"
+    try {
+        const response = await fetch(
+            `/api/run-simulation?delay=${delay}&capacity=${capacity}&refresh=${forceRefresh}`
         );
 
-    if (energyOpt) {
+        if (!response.ok) {
+            throw new Error(`Simulation API failed: ${response.status}`);
+        }
 
-        energyOpt.innerText =
-            `${data.comparison.optimized.energy_kwh}`;
+        const result = await response.json();
 
+        if (result.success === false) {
+            throw new Error(result.error || "Simulation failed to compute");
+        }
+
+        dashboardData = result.data;
+
+        // Transition UI with smooth animations
+        populateUI(dashboardData, true);
+        renderChart(dashboardData.timeseries, true);
+        updateLastEvaluatedTime();
+
+        const delayedCount = dashboardData.scheduler.delayedJobs;
+        const carbonSaved = dashboardData.headline.carbonReductionPercent;
+        showToast(`Simulation complete: ${delayedCount} jobs deferred to clean energy slots (${carbonSaved}% carbon avoided).`);
+
+    } catch (error) {
+        console.error("Simulation error:", error);
+        showToast("Simulation error: " + error.message, true);
+    } finally {
+        // Restore Ready State
+        if (runBtn) {
+            runBtn.disabled = false;
+            if (btnIcon) btnIcon.className = "fa-solid fa-play";
+            if (btnText) btnText.innerText = "Run Live Simulation";
+        }
+        if (statusDot) {
+            statusDot.style.backgroundColor = "#10b981"; // Success green
+        }
+        if (statusText) {
+            statusText.innerText = "Live System Active";
+        }
     }
-
-
-    const energyBase =
-        document.getElementById(
-            "kpi-energy-base"
-        );
-
-    if (energyBase) {
-
-        energyBase.innerText =
-            `${data.comparison.baseline.energy_kwh}`;
-
-    }
-
-
-    // ========================================================
-    // CARBON KPI
-    // ========================================================
-
-    const carbonOpt =
-        document.getElementById(
-            "kpi-carbon-opt"
-        );
-
-    if (carbonOpt) {
-
-        carbonOpt.innerText =
-            `${data.comparison.optimized.carbon_kg}`;
-
-    }
-
-
-    const carbonBase =
-        document.getElementById(
-            "kpi-carbon-base"
-        );
-
-    if (carbonBase) {
-
-        carbonBase.innerText =
-            `${data.comparison.baseline.carbon_kg}`;
-
-    }
-
-
-    // ========================================================
-    // ENERGY SAVINGS
-    // ========================================================
-
-    const energySavings =
-        document.getElementById(
-            "kpi-energy-savings"
-        );
-
-    if (energySavings) {
-
-        energySavings.innerText =
-            `${data.headline.energyReductionPercent}%`;
-
-    }
-
-
-    // ========================================================
-    // SCHEDULER
-    // ========================================================
-
-    const totalJobs =
-        document.getElementById(
-            "sch-total"
-        );
-
-    if (totalJobs) {
-
-        totalJobs.innerText =
-            data.scheduler.totalJobs;
-
-    }
-
-
-    const delayedJobs =
-        document.getElementById(
-            "sch-delayed"
-        );
-
-    if (delayedJobs) {
-
-        delayedJobs.innerText =
-            data.scheduler.delayedJobs;
-
-    }
-
-
-    const waitTime =
-        document.getElementById(
-            "sch-wait"
-        );
-
-    if (waitTime) {
-
-        waitTime.innerText =
-            `${data.scheduler.avgWaitTimeMins} mins`;
-
-    }
-
-
-    const shiftPercent =
-        Math.round(
-            (
-                data.scheduler.delayedJobs /
-                data.scheduler.totalJobs
-            ) * 100
-        );
-
-
-    const shiftPercentage =
-        document.getElementById(
-            "shift-percentage"
-        );
-
-    if (shiftPercentage) {
-
-        shiftPercentage.innerText =
-            `${shiftPercent}%`;
-
-    }
-
-
-    const shiftFill =
-        document.getElementById(
-            "shift-fill"
-        );
-
-    if (shiftFill) {
-
-        setTimeout(() => {
-
-            shiftFill.style.width =
-                `${shiftPercent}%`;
-
-        }, 100);
-
-    }
-
-
-    const shiftSummary =
-        document.getElementById(
-            "shift-summary"
-        );
-
-    if (shiftSummary) {
-
-        shiftSummary.innerText =
-            `Out of ${data.scheduler.totalJobs} total jobs, ` +
-            `${data.scheduler.delayedJobs} flexible/non-urgent jobs ` +
-            `were delayed to align with periods of low carbon grid intensity.`;
-
-    }
-
-
-    // ========================================================
-    // REAL FP32 VS INT8 INFERENCE RESULTS
-    // ========================================================
-
-    const baseline =
-        data.inference.baseline;
-
-    const quantized =
-        data.inference.quantized;
-
-
-    // --------------------------------------------------------
-    // FP32 MODEL SIZE
-    // --------------------------------------------------------
-
-    const originalSize =
-        document.getElementById(
-            "inf-size-orig"
-        );
-
-    if (originalSize) {
-
-        originalSize.innerText =
-            `${Number(baseline.size_kb).toFixed(2)} KB`;
-
-    }
-
-
-    // --------------------------------------------------------
-    // FP32 LATENCY
-    // --------------------------------------------------------
-
-    const originalLatency =
-        document.getElementById(
-            "inf-lat-orig"
-        );
-
-    if (originalLatency) {
-
-        originalLatency.innerText =
-            `${Number(baseline.latency_ms).toFixed(4)} ms`;
-
-    }
-
-
-    // --------------------------------------------------------
-    // INT8 MODEL SIZE
-    // --------------------------------------------------------
-
-    const optimizedSize =
-        document.getElementById(
-            "inf-size-opt"
-        );
-
-    if (optimizedSize) {
-
-        optimizedSize.innerText =
-            `${Number(quantized.size_kb).toFixed(2)} KB`;
-
-    }
-
-
-    // --------------------------------------------------------
-    // INT8 LATENCY
-    // --------------------------------------------------------
-
-    const optimizedLatency =
-        document.getElementById(
-            "inf-lat-opt"
-        );
-
-    if (optimizedLatency) {
-
-        optimizedLatency.innerText =
-            `${Number(quantized.latency_ms).toFixed(4)} ms`;
-
-    }
-
-
-    // ========================================================
-    // OPTIONAL MODEL NAME ELEMENTS
-    // ========================================================
-
-    const originalModel =
-        document.getElementById(
-            "inf-model-orig"
-        );
-
-    if (originalModel) {
-
-        originalModel.innerText =
-            baseline.model;
-
-    }
-
-
-    const optimizedModel =
-        document.getElementById(
-            "inf-model-opt"
-        );
-
-    if (optimizedModel) {
-
-        optimizedModel.innerText =
-            quantized.model;
-
-    }
-
-
-    // ========================================================
-    // OPTIONAL MAE ELEMENTS
-    // ========================================================
-
-    const originalMae =
-        document.getElementById(
-            "inf-mae-orig"
-        );
-
-    if (originalMae) {
-
-        originalMae.innerText =
-            Number(baseline.mae).toFixed(4);
-
-    }
-
-
-    const optimizedMae =
-        document.getElementById(
-            "inf-mae-opt"
-        );
-
-    if (optimizedMae) {
-
-        optimizedMae.innerText =
-            Number(quantized.mae).toFixed(4);
-
-    }
-
-
-    // ========================================================
-    // OPTIONAL REDUCTION ELEMENTS
-    // ========================================================
-
-    const sizeReduction =
-        document.getElementById(
-            "inf-size-reduction"
-        );
-
-    if (sizeReduction) {
-
-        sizeReduction.innerText =
-            `${data.inference.improvement.size_reduction_percent}%`;
-
-    }
-
-
-    const latencyReduction =
-        document.getElementById(
-            "inf-latency-reduction"
-        );
-
-    if (latencyReduction) {
-
-        latencyReduction.innerText =
-            `${data.inference.improvement.latency_reduction_percent}%`;
-
-    }
-
-
-    const maeChange =
-        document.getElementById(
-            "inf-mae-change"
-        );
-
-    if (maeChange) {
-
-        maeChange.innerText =
-            `${data.inference.improvement.mae_change_percent}%`;
-
-    }
-
 }
 
 
 // ============================================================
-// ENERGY CHART
+// ANIMATED NUMBER COUNTER (Cubic Easing)
 // ============================================================
 
-function renderChart(timeseriesData) {
+function animateNumber(element, target, duration = 900, decimals = 2, prefix = "", suffix = "") {
+    if (!element) return;
 
-    const canvas =
-        document.getElementById(
-            "energyChart"
-        );
+    const currentRaw = element.getAttribute("data-val");
+    const startVal = currentRaw !== null ? parseFloat(currentRaw) : 0;
+    const endVal = parseFloat(target) || 0;
 
-    if (!canvas) {
+    element.setAttribute("data-val", endVal);
+
+    if (isNaN(startVal) || isNaN(endVal)) {
+        element.innerText = `${prefix}${target}${suffix}`;
         return;
     }
 
+    const startTime = performance.now();
 
-    const ctx =
-        canvas.getContext("2d");
+    function frame(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1.0);
+        // Ease out cubic: 1 - (1 - t)^3
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = startVal + (endVal - startVal) * easeOut;
 
+        element.innerText = `${prefix}${current.toFixed(decimals)}${suffix}`;
 
-    if (energyChartInstance) {
-
-        energyChartInstance.destroy();
-
+        if (progress < 1.0) {
+            requestAnimationFrame(frame);
+        } else {
+            element.innerText = `${prefix}${endVal.toFixed(decimals)}${suffix}`;
+        }
     }
 
-
-    energyChartInstance =
-        new Chart(ctx, {
-
-            type: "line",
-
-            data: {
-
-                labels:
-                    timeseriesData.labels,
-
-                datasets: [
-
-                    {
-
-                        label:
-                            "Baseline Energy Usage (kWh)",
-
-                        data:
-                            timeseriesData.baselineEnergy,
-
-                        borderColor:
-                            "#94a3b8",
-
-                        backgroundColor:
-                            "rgba(148, 163, 184, 0.1)",
-
-                        borderDash:
-                            [5, 5],
-
-                        fill:
-                            true,
-
-                        tension:
-                            0.4
-
-                    },
-
-                    {
-
-                        label:
-                            "Optimized System Usage (kWh)",
-
-                        data:
-                            timeseriesData.optimizedEnergy,
-
-                        borderColor:
-                            "#10b981",
-
-                        backgroundColor:
-                            "rgba(16, 185, 129, 0.1)",
-
-                        borderWidth:
-                            3,
-
-                        fill:
-                            true,
-
-                        tension:
-                            0.4
-
-                    }
-
-                ]
-
-            },
-
-            options: {
-
-                responsive:
-                    true,
-
-                maintainAspectRatio:
-                    false,
-
-                plugins: {
-
-                    legend: {
-
-                        position:
-                            "top"
-
-                    },
-
-                    tooltip: {
-
-                        mode:
-                            "index",
-
-                        intersect:
-                            false
-
-                    }
-
-                },
-
-                scales: {
-
-                    y: {
-
-                        beginAtZero:
-                            true,
-
-                        title: {
-
-                            display:
-                                true,
-
-                            text:
-                                "Energy (kWh)"
-
-                        }
-
-                    },
-
-                    x: {
-
-                        title: {
-
-                            display:
-                                true,
-
-                            text:
-                                "Time of Day"
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        });
-
+    requestAnimationFrame(frame);
 }
 
 
+// ============================================================
+// POPULATE DASHBOARD UI
+// ============================================================
+
+function populateUI(data, animate = true) {
+    if (!data) return;
+
+    const animDuration = animate ? 850 : 0;
+
+    // 1. Headline Metric
+    const headlineNumber = document.getElementById("headline-number");
+    if (headlineNumber) {
+        if (animate) {
+            animateNumber(headlineNumber, data.headline.carbonReductionPercent, animDuration, 2, "", "%");
+        } else {
+            headlineNumber.innerText = `${data.headline.carbonReductionPercent}%`;
+        }
+    }
+
+    // 2. Energy KPI
+    const energyOpt = document.getElementById("kpi-energy-opt");
+    if (energyOpt) {
+        if (animate) {
+            animateNumber(energyOpt, data.comparison.optimized.energy_kwh, animDuration, 2, "", " kWh");
+        } else {
+            energyOpt.innerText = `${data.comparison.optimized.energy_kwh} kWh`;
+        }
+    }
+
+    const energyBase = document.getElementById("kpi-energy-base");
+    if (energyBase) {
+        if (animate) {
+            animateNumber(energyBase, data.comparison.baseline.energy_kwh, animDuration, 2, "", "");
+        } else {
+            energyBase.innerText = `${data.comparison.baseline.energy_kwh}`;
+        }
+    }
+
+    // 3. Carbon KPI
+    const carbonOpt = document.getElementById("kpi-carbon-opt");
+    if (carbonOpt) {
+        if (animate) {
+            animateNumber(carbonOpt, data.comparison.optimized.carbon_kg, animDuration, 2, "", " kg CO₂");
+        } else {
+            carbonOpt.innerText = `${data.comparison.optimized.carbon_kg} kg CO₂`;
+        }
+    }
+
+    const carbonBase = document.getElementById("kpi-carbon-base");
+    if (carbonBase) {
+        if (animate) {
+            animateNumber(carbonBase, data.comparison.baseline.carbon_kg, animDuration, 2, "", "");
+        } else {
+            carbonBase.innerText = `${data.comparison.baseline.carbon_kg}`;
+        }
+    }
+
+    // 4. Overall Energy Savings %
+    const energySavings = document.getElementById("kpi-energy-savings");
+    if (energySavings) {
+        if (animate) {
+            animateNumber(energySavings, data.headline.energyReductionPercent, animDuration, 2, "", "%");
+        } else {
+            energySavings.innerText = `${data.headline.energyReductionPercent}%`;
+        }
+    }
+
+    // 5. Scheduler Statistics
+    const totalJobs = document.getElementById("sch-total");
+    if (totalJobs) {
+        if (animate) {
+            animateNumber(totalJobs, data.scheduler.totalJobs, animDuration, 0, "", "");
+        } else {
+            totalJobs.innerText = data.scheduler.totalJobs;
+        }
+    }
+
+    const delayedJobs = document.getElementById("sch-delayed");
+    if (delayedJobs) {
+        if (animate) {
+            animateNumber(delayedJobs, data.scheduler.delayedJobs, animDuration, 0, "", "");
+        } else {
+            delayedJobs.innerText = data.scheduler.delayedJobs;
+        }
+    }
+
+    const waitTime = document.getElementById("sch-wait");
+    if (waitTime) {
+        if (animate) {
+            animateNumber(waitTime, data.scheduler.avgWaitTimeMins, animDuration, 2, "", " mins");
+        } else {
+            waitTime.innerText = `${data.scheduler.avgWaitTimeMins} mins`;
+        }
+    }
+
+    // Shift Progress Bar & Summary
+    const total = data.scheduler.totalJobs || 1;
+    const delayed = data.scheduler.delayedJobs || 0;
+    const shiftPercent = Math.round((delayed / total) * 100);
+
+    const shiftPercentage = document.getElementById("shift-percentage");
+    if (shiftPercentage) {
+        if (animate) {
+            animateNumber(shiftPercentage, shiftPercent, animDuration, 0, "", "%");
+        } else {
+            shiftPercentage.innerText = `${shiftPercent}%`;
+        }
+    }
+
+    const shiftFill = document.getElementById("shift-fill");
+    if (shiftFill) {
+        shiftFill.style.width = "0%";
+        setTimeout(() => {
+            shiftFill.style.width = `${Math.min(100, Math.max(0, shiftPercent))}%`;
+        }, 80);
+    }
+
+    const shiftSummary = document.getElementById("shift-summary");
+    if (shiftSummary) {
+        shiftSummary.innerText =
+            `Out of ${data.scheduler.totalJobs} total evaluated compute jobs, ` +
+            `${data.scheduler.delayedJobs} flexible/non-urgent jobs were deferred ` +
+            `to future cleaner energy windows.`;
+    }
+
+    // 6. Model Optimization Metrics (FP32 vs INT8)
+    if (data.inference) {
+        const baseline = data.inference.baseline;
+        const quantized = data.inference.quantized;
+
+        const origSize = document.getElementById("inf-size-orig");
+        if (origSize) origSize.innerText = `${Number(baseline.size_kb).toFixed(2)} KB`;
+
+        const origLat = document.getElementById("inf-lat-orig");
+        if (origLat) origLat.innerText = `${Number(baseline.latency_ms).toFixed(4)} ms`;
+
+        const optSize = document.getElementById("inf-size-opt");
+        if (optSize) optSize.innerText = `${Number(quantized.size_kb).toFixed(2)} KB`;
+
+        const optLat = document.getElementById("inf-lat-opt");
+        if (optLat) optLat.innerText = `${Number(quantized.latency_ms).toFixed(4)} ms`;
+    }
+}
+
+
+// ============================================================
+// CHART RENDERING & SMOOTH TRANSITION
+// ============================================================
+
+function renderChart(timeseriesData, animate = true) {
+    const canvas = document.getElementById("energyChart");
+    if (!canvas || !timeseriesData) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // If chart already exists, update data smoothly
+    if (energyChartInstance) {
+        energyChartInstance.data.labels = timeseriesData.labels;
+        energyChartInstance.data.datasets[0].data = timeseriesData.baselineEnergy;
+        energyChartInstance.data.datasets[1].data = timeseriesData.optimizedEnergy;
+
+        energyChartInstance.update({
+            duration: animate ? 950 : 0,
+            easing: "easeOutQuart"
+        });
+        return;
+    }
+
+    // Initialize new Chart instance
+    energyChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: timeseriesData.labels,
+            datasets: [
+                {
+                    label: "Baseline Energy Usage (kWh)",
+                    data: timeseriesData.baselineEnergy,
+                    borderColor: "#94a3b8",
+                    backgroundColor: "rgba(148, 163, 184, 0.12)",
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                },
+                {
+                    label: "Green AI Scheduled System (kWh)",
+                    data: timeseriesData.optimizedEnergy,
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.12)",
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: animate ? 1100 : 0,
+                easing: "easeOutQuart"
+            },
+            plugins: {
+                legend: {
+                    position: "top",
+                    labels: {
+                        font: { family: "'Inter', sans-serif", size: 12, weight: 600 },
+                        color: "#334155",
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    mode: "index",
+                    intersect: false,
+                    backgroundColor: "rgba(15, 23, 42, 0.9)",
+                    titleFont: { size: 13, weight: 700 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "Energy Consumption (kWh)",
+                        color: "#64748b",
+                        font: { size: 12, weight: 600 }
+                    },
+                    grid: { color: "rgba(226, 232, 240, 0.6)" }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: "Simulation Timeline (Hours)",
+                        color: "#64748b",
+                        font: { size: 12, weight: 600 }
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+
+// ============================================================
+// TOAST NOTIFICATIONS & METADATA
+// ============================================================
+
+function showToast(message, isError = false) {
+    const toast = document.getElementById("sim-toast");
+    const toastMsg = document.getElementById("sim-toast-msg");
+
+    if (!toast || !toastMsg) return;
+
+    if (toastTimeout) clearTimeout(toastTimeout);
+
+    toastMsg.innerText = message;
+    toast.style.borderColor = isError ? "#ef4444" : "#10b981";
+
+    const icon = toast.querySelector("i");
+    if (icon) {
+        icon.className = isError ? "fa-solid fa-circle-exclamation" : "fa-solid fa-circle-check";
+        icon.style.color = isError ? "#ef4444" : "#10b981";
+    }
+
+    toast.classList.add("show");
+
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3800);
+}
+
+function updateLastEvaluatedTime() {
+    const timeSpan = document.getElementById("last-run-time");
+    if (timeSpan) {
+        const now = new Date();
+        timeSpan.innerText = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+}

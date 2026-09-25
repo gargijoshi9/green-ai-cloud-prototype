@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 
 
@@ -61,7 +61,7 @@ CARBON_DATA_PATH = (
 ENERGY_PER_WORKLOAD_UNIT = 1e-6
 
 
-def _load_scheduler_results():
+def _load_scheduler_results(capacity_factor=1.25, max_delay_minutes=360):
     category_df = pd.read_csv(DATA_DIR / "workload_by_category.csv")
     forecast_path = DATA_DIR / "forecast_output.csv"
 
@@ -115,6 +115,8 @@ def _load_scheduler_results():
     scheduled = carbon_aware_schedule(
         category_df[["timestamp", "workload", "workload_type"]],
         carbon_df,
+        capacity_factor=capacity_factor,
+        max_delay_minutes=max_delay_minutes,
     )
     return scheduled, carbon_start
 
@@ -144,10 +146,13 @@ def _build_timeseries(scheduled, carbon_start, energy_reduction=0.0):
     }
 
 
-@lru_cache(maxsize=1)
-def build_dashboard_data():
+@lru_cache(maxsize=16)
+def build_dashboard_data(capacity_factor=1.25, max_delay_minutes=360):
     inference = run_benchmark(retrain=False)
-    scheduled, carbon_start = _load_scheduler_results()
+    scheduled, carbon_start = _load_scheduler_results(
+        capacity_factor=capacity_factor,
+        max_delay_minutes=max_delay_minutes,
+    )
     baseline_score = float(scheduled["carbon_score_now"].sum())
     optimized_score = float(scheduled["carbon_score_scheduled"].sum())
     carbon_reduction = (
@@ -218,9 +223,25 @@ def get_metrics():
 @app.route("/api/dashboard", methods=["GET"])
 def get_dashboard():
     try:
-        return jsonify(build_dashboard_data())
+        capacity = float(request.args.get("capacity", 1.25))
+        delay = int(request.args.get("delay", 360))
+        return jsonify(build_dashboard_data(capacity_factor=capacity, max_delay_minutes=delay))
     except Exception as error:
         app.logger.exception("Dashboard data error")
+        return jsonify({"success": False, "error": str(error)}), 500
+
+
+@app.route("/api/run-simulation", methods=["POST", "GET"])
+def run_simulation():
+    try:
+        capacity = float(request.args.get("capacity", 1.25))
+        delay = int(request.args.get("delay", 360))
+        if request.args.get("refresh", "false").lower() == "true":
+            build_dashboard_data.cache_clear()
+        data = build_dashboard_data(capacity_factor=capacity, max_delay_minutes=delay)
+        return jsonify({"success": True, "data": data})
+    except Exception as error:
+        app.logger.exception("Simulation execution error")
         return jsonify({"success": False, "error": str(error)}), 500
 
 

@@ -35,10 +35,48 @@
                         <span class="headline-text">Reduction in Carbon Emissions</span>
                     </div>
                 </div>
-                <div class="status-indicator">
-                    <span class="dot pulse"></span> Live System Active
+                <div class="header-actions">
+                    <button id="run-sim-btn" class="btn-simulation" title="Run live simulation with parameter tuning">
+                        <i class="fa-solid fa-play" id="sim-btn-icon"></i>
+                        <span id="sim-btn-text">Run Live Simulation</span>
+                    </button>
+                    <div class="status-indicator">
+                        <span class="dot pulse" id="status-dot"></span>
+                        <span id="status-text">Live System Ready</span>
+                    </div>
                 </div>
             </header>
+
+            <!-- Interactive Simulation Control Bar -->
+            <div class="sim-control-bar">
+                <div class="sim-control-item">
+                    <label for="param-delay"><i class="fa-solid fa-clock"></i> Max Delay Window:</label>
+                    <select id="param-delay">
+                        <option value="120">2 Hours</option>
+                        <option value="240">4 Hours</option>
+                        <option value="360" selected>6 Hours (Optimal)</option>
+                        <option value="480">8 Hours</option>
+                        <option value="720">12 Hours</option>
+                    </select>
+                </div>
+                <div class="sim-control-item">
+                    <label for="param-capacity"><i class="fa-solid fa-sliders"></i> Cluster Capacity Factor:</label>
+                    <select id="param-capacity">
+                        <option value="1.10">1.10x Peak Load (Tight)</option>
+                        <option value="1.25" selected>1.25x Peak Load (Standard)</option>
+                        <option value="1.50">1.50x Peak Load (High Capacity)</option>
+                    </select>
+                </div>
+                <div class="sim-meta-pill">
+                    <i class="fa-solid fa-rotate"></i> Last Evaluated: <span id="last-run-time">Ready</span>
+                </div>
+            </div>
+
+            <!-- Toast Notification Container -->
+            <div id="sim-toast" class="sim-toast" aria-live="polite">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="sim-toast-msg">Simulation complete! Workloads rescheduled to cleaner grid slots.</span>
+            </div>
 
             <!-- TAB 1: PERFORMANCE (Active by default) -->
             <div id="view-performance" class="tab-pane active">
