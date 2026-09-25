@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="dashboard-container">
         <!-- Sidebar -->
@@ -17,10 +19,14 @@
                 <h2>Green AI Cloud</h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" data-target="view-performance" class="nav-link active"><i class="fa-solid fa-chart-line"></i> Performance</a>
-                <a href="#" data-target="view-scheduler" class="nav-link"><i class="fa-solid fa-server"></i> Scheduler</a>
-                <a href="#" data-target="view-model" class="nav-link"><i class="fa-solid fa-microchip"></i> Model Opt.</a>
-                <a href="#" data-target="view-paper" class="nav-link"><i class="fa-solid fa-file-lines"></i> Research Paper</a>
+                <a href="#" data-target="view-performance" class="nav-link active"><i
+                        class="fa-solid fa-chart-line"></i> Performance</a>
+                <a href="#" data-target="view-scheduler" class="nav-link"><i class="fa-solid fa-server"></i>
+                    Scheduler</a>
+                <a href="#" data-target="view-model" class="nav-link"><i class="fa-solid fa-microchip"></i> Model
+                    Opt.</a>
+                <a href="#" data-target="view-paper" class="nav-link"><i class="fa-solid fa-file-lines"></i> Research
+                    Paper</a>
             </nav>
         </aside>
 
@@ -29,11 +35,15 @@
             <!-- Global Header -->
             <header class="top-header">
                 <div class="headline-container">
-                    <h1>System Impact Report</h1>
+                    <span class="headline-tag"><i class="fa-solid fa-leaf"></i> Carbon-Aware Scheduling</span>
                     <div class="big-headline">
                         <span id="headline-number" class="highlight-green">--%</span>
                         <span class="headline-text">Reduction in Carbon Emissions</span>
                     </div>
+                    <p class="headline-clarifier">
+                        <i class="fa-solid fa-circle-info"></i> Reflects <strong>grid-intensity-aware timing</strong>
+                        (shifting delay-tolerant batch jobs into cleaner solar/wind hours)
+                    </p>
                 </div>
                 <div class="header-actions">
                     <button id="run-sim-btn" class="btn-simulation" title="Run live simulation with parameter tuning">
@@ -86,7 +96,8 @@
                         <div class="kpi-info">
                             <h3>Total Energy (Optimized)</h3>
                             <p id="kpi-energy-opt">-- kWh</p>
-                            <small>vs <span id="kpi-energy-base">--</span> kWh baseline</small>
+                            <small> <i class="fa-solid fa-circle-info"> </i><span id="kpi-energy-base">--</span> kWh
+                                baseline (quantized)</small>
                         </div>
                     </div>
                     <div class="kpi-card">
@@ -94,15 +105,17 @@
                         <div class="kpi-info">
                             <h3>Carbon Emitted</h3>
                             <p id="kpi-carbon-opt">-- kg CO₂</p>
-                            <small>vs <span id="kpi-carbon-base">--</span> kg baseline</small>
+                            <small><i class="fa-solid fa-circle-info"></i><span id="kpi-carbon-base">--</span> kg
+                                baseline (time-shifted)</small>
                         </div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                        <div class="kpi-icon"><i class="fa-solid fa-microchip"></i></div>
                         <div class="kpi-info">
-                            <h3>Overall Energy Savings</h3>
+                            <h3>Inference Energy Savings</h3>
                             <p id="kpi-energy-savings">--%</p>
-                            <small>Compared to doing nothing</small>
+                            <small><i class="fa-solid fa-circle-info"></i> Reflects <strong>total kWh
+                                    reduction</strong></small>
                         </div>
                     </div>
                 </section>
@@ -122,8 +135,9 @@
             <div id="view-scheduler" class="tab-pane">
                 <div class="detail-card full-width">
                     <h3><i class="fa-solid fa-earth-americas"></i> Smart Scheduling Logic</h3>
-                    <p class="text-muted">The scheduler shifts flexible workloads to periods of high renewable energy availability (low carbon intensity). Urgent jobs are executed immediately.</p>
-                    
+                    <p class="text-muted">The scheduler shifts flexible workloads to periods of high renewable energy
+                        availability (low carbon intensity). Urgent jobs are executed immediately.</p>
+
                     <div class="scheduler-stats-grid">
                         <div class="stat-box">
                             <h4>Total Jobs Processed</h4>
@@ -156,8 +170,9 @@
             <div id="view-model" class="tab-pane">
                 <div class="detail-card full-width">
                     <h3><i class="fa-solid fa-compress"></i> Inference Optimization (Quantization)</h3>
-                    <p class="text-muted">By quantizing the AI model weights, we drastically reduce the memory footprint and execution time, lowering the energy consumed per inference request.</p>
-                    
+                    <p class="text-muted">By quantizing the AI model weights, we drastically reduce the memory footprint
+                        and execution time, lowering the energy consumed per inference request.</p>
+
                     <div class="comparison-row mt-4">
                         <div class="comp-col">
                             <h4>Original AI Model (Baseline)</h4>
@@ -178,17 +193,28 @@
             <div id="view-paper" class="tab-pane">
                 <div class="paper-container">
                     <div class="paper-header">
-                        <h2>Green AI: Predictive Workload Scheduling and Quantization for Carbon-Aware Cloud Computing</h2>
+                        <h2>Green AI: Predictive Workload Scheduling and Quantization for Carbon-Aware Cloud Computing
+                        </h2>
                         <p class="authors">Research Internship Output</p>
                     </div>
                     <div class="paper-abstract">
                         <h3>Abstract</h3>
-                        <p>This study demonstrates how cloud computing infrastructure can significantly reduce its carbon footprint and electricity consumption through a tripartite approach. First, a predictive model forecasts workload surges to enable proactive resource allocation. Second, a carbon-aware scheduler delays non-urgent, flexible compute tasks until the energy grid's carbon intensity is low. Finally, inference optimization via model quantization reduces the per-execution energy cost of AI workloads without substantial loss of accuracy. Our results, visualized in this dashboard, prove that combining these techniques yields a measurable reduction in both total energy used and estimated CO₂ emissions compared to a standard, reactive baseline.</p>
+                        <p>This study demonstrates how cloud computing infrastructure can significantly reduce its
+                            carbon footprint and electricity consumption through a tripartite approach. First, a
+                            predictive model forecasts workload surges to enable proactive resource allocation. Second,
+                            a carbon-aware scheduler delays non-urgent, flexible compute tasks until the energy grid's
+                            carbon intensity is low. Finally, inference optimization via model quantization reduces the
+                            per-execution energy cost of AI workloads without substantial loss of accuracy. Our results,
+                            visualized in this dashboard, prove that combining these techniques yields a measurable
+                            reduction in both total energy used and estimated CO₂ emissions compared to a standard,
+                            reactive baseline.</p>
                     </div>
                     <div class="paper-actions">
                         <!-- Placeholder for the final technical writing document (e.g., LaTeX/PDF output) -->
-                        <button class="btn-primary"><i class="fa-solid fa-download"></i> Download Full Paper (PDF)</button>
-                        <a href="https://github.com/gargijoshi9/green-ai-cloud-prototype" target="_blank" class="btn-secondary"><i class="fa-brands fa-github"></i> View Repository</a>
+                        <button class="btn-primary"><i class="fa-solid fa-download"></i> Download Full Paper
+                            (PDF)</button>
+                        <a href="https://github.com/gargijoshi9/green-ai-cloud-prototype" target="_blank"
+                            class="btn-secondary"><i class="fa-brands fa-github"></i> View Repository</a>
                     </div>
                 </div>
             </div>
@@ -197,4 +223,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>

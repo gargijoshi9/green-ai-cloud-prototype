@@ -187,7 +187,22 @@ async function triggerSimulation(forceRefresh = false) {
 
 
 // ============================================================
-// ANIMATED NUMBER COUNTER (Cubic Easing)
+// ============================================================
+// NUMBER FORMATTING WITH COMMAS (e.g. 98,013.76)
+// ============================================================
+
+function formatNumberWithCommas(val, decimals = 2) {
+    const num = Number(val);
+    if (isNaN(num)) return val;
+    return num.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+
+// ============================================================
+// ANIMATED NUMBER COUNTER (Cubic Easing with Commas)
 // ============================================================
 
 function animateNumber(element, target, duration = 900, decimals = 2, prefix = "", suffix = "") {
@@ -200,7 +215,7 @@ function animateNumber(element, target, duration = 900, decimals = 2, prefix = "
     element.setAttribute("data-val", endVal);
 
     if (isNaN(startVal) || isNaN(endVal)) {
-        element.innerText = `${prefix}${target}${suffix}`;
+        element.innerText = `${prefix}${formatNumberWithCommas(target, decimals)}${suffix}`;
         return;
     }
 
@@ -213,12 +228,12 @@ function animateNumber(element, target, duration = 900, decimals = 2, prefix = "
         const easeOut = 1 - Math.pow(1 - progress, 3);
         const current = startVal + (endVal - startVal) * easeOut;
 
-        element.innerText = `${prefix}${current.toFixed(decimals)}${suffix}`;
+        element.innerText = `${prefix}${formatNumberWithCommas(current, decimals)}${suffix}`;
 
         if (progress < 1.0) {
             requestAnimationFrame(frame);
         } else {
-            element.innerText = `${prefix}${endVal.toFixed(decimals)}${suffix}`;
+            element.innerText = `${prefix}${formatNumberWithCommas(endVal, decimals)}${suffix}`;
         }
     }
 
@@ -241,7 +256,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(headlineNumber, data.headline.carbonReductionPercent, animDuration, 2, "", "%");
         } else {
-            headlineNumber.innerText = `${data.headline.carbonReductionPercent}%`;
+            headlineNumber.innerText = `${formatNumberWithCommas(data.headline.carbonReductionPercent, 2)}%`;
         }
     }
 
@@ -251,7 +266,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(energyOpt, data.comparison.optimized.energy_kwh, animDuration, 2, "", " kWh");
         } else {
-            energyOpt.innerText = `${data.comparison.optimized.energy_kwh} kWh`;
+            energyOpt.innerText = `${formatNumberWithCommas(data.comparison.optimized.energy_kwh, 2)} kWh`;
         }
     }
 
@@ -260,7 +275,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(energyBase, data.comparison.baseline.energy_kwh, animDuration, 2, "", "");
         } else {
-            energyBase.innerText = `${data.comparison.baseline.energy_kwh}`;
+            energyBase.innerText = `${formatNumberWithCommas(data.comparison.baseline.energy_kwh, 2)}`;
         }
     }
 
@@ -270,7 +285,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(carbonOpt, data.comparison.optimized.carbon_kg, animDuration, 2, "", " kg CO₂");
         } else {
-            carbonOpt.innerText = `${data.comparison.optimized.carbon_kg} kg CO₂`;
+            carbonOpt.innerText = `${formatNumberWithCommas(data.comparison.optimized.carbon_kg, 2)} kg CO₂`;
         }
     }
 
@@ -279,7 +294,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(carbonBase, data.comparison.baseline.carbon_kg, animDuration, 2, "", "");
         } else {
-            carbonBase.innerText = `${data.comparison.baseline.carbon_kg}`;
+            carbonBase.innerText = `${formatNumberWithCommas(data.comparison.baseline.carbon_kg, 2)}`;
         }
     }
 
@@ -289,7 +304,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(energySavings, data.headline.energyReductionPercent, animDuration, 2, "", "%");
         } else {
-            energySavings.innerText = `${data.headline.energyReductionPercent}%`;
+            energySavings.innerText = `${formatNumberWithCommas(data.headline.energyReductionPercent, 2)}%`;
         }
     }
 
@@ -299,7 +314,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(totalJobs, data.scheduler.totalJobs, animDuration, 0, "", "");
         } else {
-            totalJobs.innerText = data.scheduler.totalJobs;
+            totalJobs.innerText = formatNumberWithCommas(data.scheduler.totalJobs, 0);
         }
     }
 
@@ -308,7 +323,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(delayedJobs, data.scheduler.delayedJobs, animDuration, 0, "", "");
         } else {
-            delayedJobs.innerText = data.scheduler.delayedJobs;
+            delayedJobs.innerText = formatNumberWithCommas(data.scheduler.delayedJobs, 0);
         }
     }
 
@@ -317,7 +332,7 @@ function populateUI(data, animate = true) {
         if (animate) {
             animateNumber(waitTime, data.scheduler.avgWaitTimeMins, animDuration, 2, "", " mins");
         } else {
-            waitTime.innerText = `${data.scheduler.avgWaitTimeMins} mins`;
+            waitTime.innerText = `${formatNumberWithCommas(data.scheduler.avgWaitTimeMins, 2)} mins`;
         }
     }
 
@@ -346,8 +361,8 @@ function populateUI(data, animate = true) {
     const shiftSummary = document.getElementById("shift-summary");
     if (shiftSummary) {
         shiftSummary.innerText =
-            `Out of ${data.scheduler.totalJobs} total evaluated compute jobs, ` +
-            `${data.scheduler.delayedJobs} flexible/non-urgent jobs were deferred ` +
+            `Out of ${formatNumberWithCommas(data.scheduler.totalJobs, 0)} total evaluated compute jobs, ` +
+            `${formatNumberWithCommas(data.scheduler.delayedJobs, 0)} flexible/non-urgent jobs were deferred ` +
             `to future cleaner energy windows.`;
     }
 
@@ -449,12 +464,24 @@ function renderChart(timeseriesData, animate = true) {
                     titleFont: { size: 13, weight: 700 },
                     bodyFont: { size: 12 },
                     padding: 12,
-                    cornerRadius: 8
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || "";
+                            const val = context.parsed.y;
+                            return ` ${label}: ${formatNumberWithCommas(val, 2)} kWh`;
+                        }
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatNumberWithCommas(value, 0);
+                        }
+                    },
                     title: {
                         display: true,
                         text: "Energy Consumption (kWh)",
