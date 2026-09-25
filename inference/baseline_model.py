@@ -4,26 +4,39 @@ import torch.nn as nn
 
 class WorkloadModel(nn.Module):
     """
-    Neural network for workload prediction.
+    Deep neural network for cloud workload prediction.
 
     Input:
-        5 consecutive real workload values
+        5 consecutive real workload values (e.g. historical CPU readings).
+
+    Architecture:
+        Deep Multi-Layer Perceptron (MLP):
+        Input(5) -> 128 -> 256 -> 128 -> 64 -> Output(1)
+        with ReLU activations (~75,000 parameters).
+        This scale represents a realistic operational inference service where
+        quantization compute and memory benefits become tangible.
 
     Output:
-        next workload value
+        Predicted next workload value
     """
 
     def __init__(self, input_size=5):
         super().__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(input_size, 32),
+            nn.Linear(input_size, 128),
             nn.ReLU(),
 
-            nn.Linear(32, 16),
+            nn.Linear(128, 256),
             nn.ReLU(),
 
-            nn.Linear(16, 1)
+            nn.Linear(256, 128),
+            nn.ReLU(),
+
+            nn.Linear(128, 64),
+            nn.ReLU(),
+
+            nn.Linear(64, 1)
         )
 
     def forward(self, x):
