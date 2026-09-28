@@ -191,49 +191,56 @@ It then compares the two scenarios to quantify:
 ## System Architecture
 
 ```mermaid
-flowchart LR
-    subgraph S1["1. Data Layer"]
+flowchart TD
+    %% Styling definitions
+    classDef data fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20,rx:8,ry:8
+    classDef model fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b,rx:8,ry:8
+    classDef engine fill:#ede7f6,stroke:#5e35b1,stroke-width:2px,color:#311b92,rx:8,ry:8
+    classDef backend fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#e65100,rx:8,ry:8
+    classDef dashboard fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f,rx:8,ry:8
+    classDef metrics fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e,rx:15,ry:15
+
+    %% Modules
+    subgraph S1 ["📡 1. Data Ingestion"]
+        direction LR
+        D1[("📊 Telemetry Dataset<br/><small>CPU, Memory, Task Traces</small>")]:::data
+        D2[("🌱 Carbon Grid API<br/><small>Solar/Wind Intensity Curves</small>")]:::data
+    end
+
+    subgraph S2 ["🧠 2. Prediction Module"]
+        P1{"📈 Differenced Ridge Forecaster<br/><small>Predicts short-term cluster load</small>"}:::model
+    end
+
+    subgraph S3 ["⚙️ 3. Optimization Engine"]
         direction TB
-        D1["Workload Dataset<br/><i>(CPU, Memory, Job traces)</i>"]
-        D2["Carbon-Intensity Signal<br/><i>(Grid API / Solar-Wind curves)</i>"]
+        C1["🌿 Carbon-Aware Scheduler<br/><small>Greedy CO₂ minimization</small>"]:::engine
+        I1["🤖 Efficient AI Inference<br/><small>5-Layer MLP (INT8 Quantized)</small>"]:::engine
     end
 
-    subgraph S2["2. Workload Prediction"]
-        P1["Demand Forecaster<br/><i>(Learns daily & weekly cycles)</i>"]
-    end
-
-    subgraph S3["Optimization Engine"]
+    subgraph S4 ["🌐 4. Web Application"]
         direction TB
-        C1["3. Carbon-Aware Scheduler<br/><i>(Shifts delay-tolerant jobs)</i>"]
-        I1["4. Efficient Inference<br/><i>(Quantized 8-bit Models)</i>"]
+        B1("🚀 Flask API Backend<br/><small>Cached Pipeline Execution</small>"):::backend
+        DB["🖥️ Chart.js Dashboard<br/><small>Live Comparative Visualization</small>"]:::dashboard
     end
 
-    subgraph S4["5. Results Dashboard"]
-        DB["Comparative Dashboard<br/><i>(Baseline vs. Green AI Pipeline)</i>"]
+    subgraph S5 ["🏆 5. Tangible Outcomes"]
+        direction LR
+        O1(("⚡ Energy Reduced")):::metrics
+        O2(("📉 Carbon Avoided")):::metrics
+        O3(("🚀 Faster Inference")):::metrics
     end
 
-    subgraph S5["6. Output"]
-        OUT["Headline Metrics<br/><b>⚡ % Energy Saved</b><br/><b>🌱 % Carbon Avoided</b>"]
-    end
-
-    D1 --> P1
-    P1 --> C1
-    D2 --> C1
-    C1 --> DB
-    I1 --> DB
-    DB --> OUT
-
-    classDef dataBox fill:#e8f5e9,stroke:#2e7d32,stroke-width:1.5px,color:#1b5e20;
-    classDef predBox fill:#e1f5fe,stroke:#0288d1,stroke-width:1.5px,color:#01579b;
-    classDef engineBox fill:#ede7f6,stroke:#5e35b1,stroke-width:1.5px,color:#311b92;
-    classDef dashBox fill:#f3e5f5,stroke:#8e24aa,stroke-width:1.5px,color:#4a148c;
-    classDef outBox fill:#fff3e0,stroke:#ef6c00,stroke-width:1.5px,color:#e65100;
-
-    class S1,D1,D2 dataBox;
-    class S2,P1 predBox;
-    class S3,C1,I1 engineBox;
-    class S4,DB dashBox;
-    class S5,OUT outBox;
+    %% Data flow
+    D1 ==>|"Time-Series Load"| P1
+    D2 ==>|"CO₂ Signals"| C1
+    
+    P1 ==>|"Predicted Demand"| C1
+    
+    C1 ==>|"Scheduled Workloads"| B1
+    I1 ==>|"Benchmark Stats"| B1
+    
+    B1 ==>|"JSON Analytics"| DB
+    DB ===> O1 & O2 & O3
 ```
 
 The goal is to demonstrate how **AI-based workload prediction, carbon-aware scheduling, and efficient model inference can work together as a unified sustainable cloud-computing pipeline.**
