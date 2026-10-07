@@ -60,8 +60,15 @@ CARBON_DATA_PATH = (
 )
 ENERGY_PER_WORKLOAD_UNIT = 1e-6
 
+# Canonical configuration defaults
+DEFAULT_CAPACITY_FACTOR = 1.5
+DEFAULT_MAX_DELAY_MINUTES = 720  # 12 hours
 
-def _load_scheduler_results(capacity_factor=1.25, max_delay_minutes=360):
+
+def _load_scheduler_results(
+    capacity_factor=DEFAULT_CAPACITY_FACTOR,
+    max_delay_minutes=DEFAULT_MAX_DELAY_MINUTES,
+):
     category_df = pd.read_csv(DATA_DIR / "workload_by_category.csv")
     forecast_path = DATA_DIR / "forecast_output.csv"
 
@@ -147,7 +154,10 @@ def _build_timeseries(scheduled, carbon_start, energy_reduction=0.0):
 
 
 @lru_cache(maxsize=16)
-def build_dashboard_data(capacity_factor=1.25, max_delay_minutes=360):
+def build_dashboard_data(
+    capacity_factor=DEFAULT_CAPACITY_FACTOR,
+    max_delay_minutes=DEFAULT_MAX_DELAY_MINUTES,
+):
     inference = run_benchmark(retrain=False)
     scheduled, carbon_start = _load_scheduler_results(
         capacity_factor=capacity_factor,
@@ -223,8 +233,8 @@ def get_metrics():
 @app.route("/api/dashboard", methods=["GET"])
 def get_dashboard():
     try:
-        capacity = float(request.args.get("capacity", 1.25))
-        delay = int(request.args.get("delay", 360))
+        capacity = float(request.args.get("capacity", DEFAULT_CAPACITY_FACTOR))
+        delay = int(request.args.get("delay", DEFAULT_MAX_DELAY_MINUTES))
         return jsonify(build_dashboard_data(capacity_factor=capacity, max_delay_minutes=delay))
     except Exception as error:
         app.logger.exception("Dashboard data error")
@@ -234,8 +244,8 @@ def get_dashboard():
 @app.route("/api/run-simulation", methods=["POST", "GET"])
 def run_simulation():
     try:
-        capacity = float(request.args.get("capacity", 1.25))
-        delay = int(request.args.get("delay", 360))
+        capacity = float(request.args.get("capacity", DEFAULT_CAPACITY_FACTOR))
+        delay = int(request.args.get("delay", DEFAULT_MAX_DELAY_MINUTES))
         if request.args.get("refresh", "false").lower() == "true":
             build_dashboard_data.cache_clear()
         data = build_dashboard_data(capacity_factor=capacity, max_delay_minutes=delay)

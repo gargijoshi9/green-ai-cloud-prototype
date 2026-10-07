@@ -64,17 +64,17 @@
                     <select id="param-delay">
                         <option value="120">2 Hours</option>
                         <option value="240">4 Hours</option>
-                        <option value="360" selected>6 Hours (Optimal)</option>
+                        <option value="360">6 Hours</option>
                         <option value="480">8 Hours</option>
-                        <option value="720">12 Hours</option>
+                        <option value="720" selected>12 Hours (Default)</option>
                     </select>
                 </div>
                 <div class="sim-control-item">
                     <label for="param-capacity"><i class="fa-solid fa-sliders"></i> Cluster Capacity Factor:</label>
                     <select id="param-capacity">
                         <option value="1.10">1.10x Peak Load (Tight)</option>
-                        <option value="1.25" selected>1.25x Peak Load (Standard)</option>
-                        <option value="1.50">1.50x Peak Load (High Capacity)</option>
+                        <option value="1.25">1.25x Peak Load (Standard)</option>
+                        <option value="1.50" selected>1.50x Peak Load (Default)</option>
                     </select>
                 </div>
                 <div class="sim-meta-pill">
@@ -114,7 +114,7 @@
                         <div class="kpi-info">
                             <h3>Inference Energy Savings</h3>
                             <p id="kpi-energy-savings">--%</p>
-                            <small><i class="fa-solid fa-circle-info"></i> Reflects <strong>total kWh
+                            <small><i class="fa-solid fa-circle-info"></i><strong>FP32 → INT8
                                     reduction</strong></small>
                         </div>
                     </div>
@@ -211,7 +211,8 @@
                     </div>
                     <div class="paper-actions">
                         <!-- Final Technical Writing Document (PDF) -->
-                        <a href="Green_AI_IEEE_Format.pdf" download="Green_AI_IEEE_Format.pdf" class="btn-primary" style="text-decoration: none;">
+                        <a href="Green_AI_IEEE_Format.pdf" download="Green_AI_IEEE_Format.pdf" class="btn-primary"
+                            style="text-decoration: none;">
                             <i class="fa-solid fa-download"></i> Download Full Paper (PDF)
                         </a>
                         <a href="https://github.com/gargijoshi9/green-ai-cloud-prototype" target="_blank"

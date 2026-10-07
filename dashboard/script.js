@@ -85,8 +85,8 @@ function setupSimulationControls() {
 
 async function loadDashboardData() {
     try {
-        const delay = document.getElementById("param-delay")?.value || 360;
-        const capacity = document.getElementById("param-capacity")?.value || 1.25;
+        const delay = document.getElementById("param-delay")?.value || 720;
+        const capacity = document.getElementById("param-capacity")?.value || 1.5;
 
         const response = await fetch(`/api/dashboard?delay=${delay}&capacity=${capacity}`);
 
@@ -124,8 +124,8 @@ async function triggerSimulation(forceRefresh = false) {
     const statusDot = document.getElementById("status-dot");
     const statusText = document.getElementById("status-text");
 
-    const delay = document.getElementById("param-delay")?.value || 360;
-    const capacity = document.getElementById("param-capacity")?.value || 1.25;
+    const delay = document.getElementById("param-delay")?.value || 720;
+    const capacity = document.getElementById("param-capacity")?.value || 1.5;
 
     // Enter Loading State
     if (runBtn) {

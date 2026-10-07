@@ -20,11 +20,16 @@ def carbon_score(workload: float, carbon_intensity: float) -> float:
     return float(workload) * float(carbon_intensity)
 
 
+# Canonical configuration defaults
+DEFAULT_MAX_DELAY_MINUTES = 720  # 12 hours
+DEFAULT_CAPACITY_FACTOR = 1.5
+
+
 def carbon_aware_schedule(
     workload_df: pd.DataFrame,
     carbon_df: pd.DataFrame,
-    capacity_factor: float = 1.25,
-    max_delay_minutes: int = 360,
+    capacity_factor: float = DEFAULT_CAPACITY_FACTOR,
+    max_delay_minutes: int = DEFAULT_MAX_DELAY_MINUTES,
 ) -> pd.DataFrame:
     """
     Schedule each workload at its original time or, for flexible work,
