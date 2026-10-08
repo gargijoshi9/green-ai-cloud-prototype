@@ -51,6 +51,7 @@ def dashboard_index():
 
 
 @app.route("/<path:filename>")
+@app.route("/dashboard/<path:filename>")
 def dashboard_asset(filename):
     return send_from_directory(os.path.dirname(__file__), filename)
 

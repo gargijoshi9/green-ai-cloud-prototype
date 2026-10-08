@@ -199,24 +199,22 @@
                     </div>
                     <div class="paper-abstract">
                         <h3>Abstract</h3>
-                        <p>This study demonstrates how cloud computing infrastructure can significantly reduce its
-                            carbon footprint and electricity consumption through a tripartite approach. First, a
-                            predictive model forecasts workload surges to enable proactive resource allocation. Second,
-                            a carbon-aware scheduler delays non-urgent, flexible compute tasks until the energy grid's
-                            carbon intensity is low. Finally, inference optimization via model quantization reduces the
-                            per-execution energy cost of AI workloads without substantial loss of accuracy. Our results,
-                            visualized in this dashboard, prove that combining these techniques yields a measurable
-                            reduction in both total energy used and estimated CO₂ emissions compared to a standard,
-                            reactive baseline.</p>
+                        <p>Cloud data centers are among the fastest-growing consumers of global electricity, yet most cloud computing systems execute workloads without any awareness of the environmental cost of the electricity being consumed at a given moment. This paper presents an integrated prototype system that combines three established AI-driven techniques — workload demand prediction, carbon-aware job scheduling, and energy-efficient model inference into a single working pipeline. While each of these techniques has been studied independently in prior research, this work demonstrates their combined effect on a simulated cloud environment using real Azure VM utilization traces and real regional grid carbon-intensity data for India. Our system forecasts near-future computing demand, uses that forecast alongside carbon-intensity data to delay flexible workloads into cleaner electricity windows, and applies model quantization to reduce the energy cost of inference itself. Experimental results show a 42.50% reduction in proxy-estimated inference energy cost, alongside a 0.55% reduction in estimated carbon emissions. The INT8 quantization also reduces model memory footprint by 72.34%. These findings suggest that combining prediction, scheduling, and model-level efficiency techniques offers meaningfully greater sustainability gains than any single technique applied in isolation.</p>
                     </div>
                     <div class="paper-actions">
-                        <!-- Final Technical Writing Document (PDF) -->
-                        <a href="Green_AI_IEEE_Format.pdf" download="Green_AI_IEEE_Format.pdf" class="btn-primary"
+                        <a href="Reseach%20Paper.pdf" download="Research_Paper.pdf" class="btn-primary"
                             style="text-decoration: none;">
                             <i class="fa-solid fa-download"></i> Download Full Paper (PDF)
                         </a>
+                        <a href="Reseach%20Paper.pdf" target="_blank" class="btn-secondary"
+                            style="text-decoration: none;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in New Tab
+                        </a>
                         <a href="https://github.com/gargijoshi9/green-ai-cloud-prototype" target="_blank"
                             class="btn-secondary"><i class="fa-brands fa-github"></i> View Repository</a>
+                    </div>
+                    <div class="paper-preview-container" style="margin-top: 28px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                        <iframe src="Reseach%20Paper.pdf" style="width: 100%; height: 750px; border: none;" title="Research Paper PDF Viewer"></iframe>
                     </div>
                 </div>
             </div>

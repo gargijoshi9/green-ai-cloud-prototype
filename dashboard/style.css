@@ -253,7 +253,7 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .mt-4 { margin-top: 24px; }
 
 /* Research Paper Tab */
-.paper-container { max-width: 800px; background: white; padding: 48px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); margin: 0 auto; }
+.paper-container { max-width: 920px; background: white; padding: 40px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); margin: 0 auto; }
 .paper-header { text-align: center; margin-bottom: 32px; border-bottom: 2px solid var(--border-color); padding-bottom: 24px; }
 .paper-header h2 { font-size: 1.6rem; color: #0f172a; margin-bottom: 12px; line-height: 1.4; }
 .authors { color: var(--text-muted); font-style: italic; }
